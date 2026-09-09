@@ -38,7 +38,8 @@ gh attestation verify harness-lens-v0.0.2-x86_64-unknown-linux-gnu.tar.gz \
 > [!CAUTION]
 > Never create a stable CLI tag or GitHub release manually. Do not dispatch the
 > production workflow until the repository controls and sandbox rehearsal in
-> the [CLI release runbook](release-runbook.md) are complete.
+> the [CLI release runbook](release-runbook.md) are complete. The sole exception
+> is the bounded [`v0.0.5` supervised production acceptance](releases/v0.0.5-preflight.md).
 
 Dispatch `Native release and distribution` once from `main`, supplying only the
 unused version. Its read-only preflight rejects a consumed tag, release, or npm
@@ -84,11 +85,13 @@ Harness Lens App on the tap with Contents write, Pull requests write, and
 Metadata read. Configure the CLI repository:
 
 - repository variable `HOMEBREW_TAP_PUBLISH_ENABLED=false` during preparation;
-- repository secret `HARNESS_LENS_APP_ID`;
-- repository secret `HARNESS_LENS_APP_PRIVATE_KEY`.
+- `release` environment secret `HARNESS_LENS_APP_ID`;
+- `release` environment secret `HARNESS_LENS_APP_PRIVATE_KEY`.
 
 The switch is a variable, not a secret. Enable it only after the workflow is
-merged and the repository controls and sandbox rehearsal are complete.
+merged and the repository controls and sandbox rehearsal are complete, or for
+the explicitly authorized `v0.0.5` acceptance after satisfying its preflight
+record.
 Disabling Homebrew also blocks GHCR; it does not disable the separately approved
 GitHub release job or change npm publication behavior.
 

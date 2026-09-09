@@ -126,8 +126,24 @@ test("already merged release is reused even when its branch is deleted", async (
   assert.equal(state.writes.length, 0);
 });
 
+test("upgrades an older URL-derived formula and matching legacy version", async () => {
+  for (const legacy of [false, true]) {
+    const { state, api } = fixture();
+    let current = formula.replaceAll("0.0.3", "0.0.2");
+    if (legacy) current = current.replace('  license', '  version "0.0.2"\n  license');
+    state.formulas.set(state.main, current);
+    assert.equal((await ensureFormulaPr(api, release)).number, 9);
+    assert.ok(state.writes.length > 0);
+  }
+});
+
 for (const [name, modify, expected] of [
-  ["newer version", (s) => s.formulas.set(s.main, formula.replace('version "0.0.3"', 'version "0.0.4"')), /downgrade/],
+  ["newer version", (s) => s.formulas.set(s.main, formula.replaceAll("0.0.3", "0.0.4")), /downgrade/],
+  ["mismatched tag/archive version", (s) => s.formulas.set(s.main, formula.replace("download/v0.0.3/", "download/v0.0.2/")), /determine current formula version/],
+  ["mixed architecture versions", (s) => s.formulas.set(s.main, formula.replace("download/v0.0.3/harness-lens-v0.0.3-aarch64", "download/v0.0.2/harness-lens-v0.0.2-aarch64")), /determine current formula version/],
+  ["duplicate architecture", (s) => s.formulas.set(s.main, formula.replace("x86_64-apple", "aarch64-apple")), /determine current formula version/],
+  ["unrecognized version declaration", (s) => s.formulas.set(s.main, formula.replace('  license', "  version '0.0.4'\n  license")), /determine current formula version/],
+  ["conflicting legacy version", (s) => s.formulas.set(s.main, formula.replace('  license', '  version "0.0.1"\n  license')), /determine current formula version/],
   ["same version with different checksum", (s) => s.formulas.set(s.main, formula.replace("a".repeat(64), "e".repeat(64))), /replacement/],
   ["unknown formula syntax", (s) => s.formulas.set(s.main, "arbitrary formula"), /determine current formula version/],
   ["unbound identical formula", (s) => s.formulas.set(s.main, formula), /without the bound release PR/],

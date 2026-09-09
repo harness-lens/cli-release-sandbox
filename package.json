@@ -1,6 +1,6 @@
 {
   "name": "@harness-lens/cli",
-  "version": "0.0.4",
+  "version": "0.0.6",
   "description": "Command-line interface for deterministic Harness Lens analysis.",
   "type": "module",
   "main": "./dist/index.js",

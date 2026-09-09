@@ -9,11 +9,13 @@ recoverable before the irreversible immutable-publication boundary.
 
 ## Current status
 
-The corrective workflow and tests implement the repository-side one-run
-transaction. They are not production-ready until merged and the tag rules,
-protected environment, npm trusted publisher, and other repository controls are
-verified and recorded. Do not create another stable tag or GitHub release until
-an immutable release-sandbox rehearsal has also passed.
+The corrective workflow and tests implementing the repository-side one-run
+transaction are merged. The tag rules, protected environments, npm trusted
+publisher, and other repository controls must still be verified and recorded
+before each production run. Do not create another stable tag or GitHub release
+until an immutable release-sandbox rehearsal has also passed. The sole exception
+is the supervised `v0.0.5` production acceptance authorized and bounded by the
+[`v0.0.5` preflight record](releases/v0.0.5-preflight.md).
 
 Tags `v0.0.3` and `v0.0.4` are consumed and must never be recreated or reused.
 Release `v0.0.4` is immutable and contains no assets. See the
@@ -49,8 +51,9 @@ Before a production run, verify and record:
   only the intended branch;
 - a tag ruleset protects stable `v*` tags from human creation, update, and
   deletion, with only the release automation identity allowed to bypass it;
-- every workflow defaults to `contents: read`, and only the protected publisher
-  job receives `contents: write`;
+- every workflow defaults to `contents: read`; the protected publisher keeps its
+  `GITHUB_TOKEN` read-only and mints a repository-scoped release App token with
+  `contents: write` only after environment approval;
 - registry and GitHub App credentials exist only in their protected
   environments and have the minimum permissions required;
 - release workflow and verification-script changes require review and passing
@@ -63,6 +66,24 @@ permission for `npm publish`. npm validates the calling workflow when a
 reusable `workflow_call` performs publication; do not configure `publish.yml` as
 the trusted filename. Record the npm settings screen because npm does not test
 the OIDC relationship when it is saved.
+
+Direct `npm publish` permission is an intentional project decision. The npm job
+runs only after protected approval and after GitHub reports the complete,
+reviewed release as immutable. It publishes that run's exact retained tarball
+through short-lived OIDC credentials; traditional bypass-2FA tokens remain
+disallowed. npm's stronger staged-only option is not compatible with the
+current transaction: leaving `Allow npm publish` unchecked would reject the
+workflow's direct publish command after the GitHub release already exists.
+
+Do not switch the npm setting to staged-only as an isolated configuration
+change. Such a migration requires a reviewed redesign using `npm stage publish`,
+npm CLI 11.15.0 or later, an explicit maintainer review and 2FA approval step,
+post-approval registry reconciliation, and downstream jobs that remain blocked
+until the staged version is publicly observable. See npm's
+[trusted-publisher](https://docs.npmjs.com/trusted-publishers/) and
+[staged-publishing](https://docs.npmjs.com/staged-publishing/) documentation.
+Never record npm session data, tokens, private keys, recovery codes, or 2FA
+values in release evidence.
 
 Capture a read-only GitHub settings audit before the sandbox rehearsal and the
 production run:
@@ -128,7 +149,7 @@ The diff must be empty. This verifies the repository content only; it does not
 verify environment reviewers, tag rules, release immutability, registry
 configuration, or the behavior of the irreversible publication boundary. Audit
 those settings separately and complete the sandbox rehearsal below before any
-production dispatch.
+production dispatch other than the bounded `v0.0.5` acceptance.
 
 ## One-run release sequence
 
@@ -272,6 +293,10 @@ The sandbox rehearsal must prove that draft recovery works, exact assets are
 accepted, publication makes the release immutable, subsequent asset mutation is
 rejected, and an unauthorized stable-tag creation is rejected. A production
 version is not a workflow test fixture.
+
+The `v0.0.5` exception does not satisfy this rehearsal requirement. It expires
+when `v0.0.5` is consumed and cannot be cited for any later version. Complete the
+dedicated sandbox rehearsal before preparing the next production version.
 
 ## Evidence retained for every release
 

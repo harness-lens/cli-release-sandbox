@@ -19,7 +19,7 @@ dependencies = [
 
 [[package]]
 name = "harness-lens-cli"
-version = "0.0.4"
+version = "0.0.6"
 dependencies = [
  "harness-lens",
  "serde_json",

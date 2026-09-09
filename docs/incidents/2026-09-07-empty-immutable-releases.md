@@ -85,14 +85,16 @@ insufficient controls against the wrong entry point.
 Do not delete, rewrite, reuse, or attempt to add assets to `v0.0.4`. Preserve
 the release and successful dry-run artifact as incident evidence. Prepare a new
 version only after the corrective release workflow, tests, repository controls,
-and sandbox rehearsal satisfy the [release runbook](../release-runbook.md).
+and sandbox rehearsal satisfy the [release runbook](../release-runbook.md). The
+sole exception is the bounded
+[`v0.0.5` supervised production acceptance](../releases/v0.0.5-preflight.md).
 
 ## Corrective actions
 
 - [x] Replace the tag-push plus rebuilding publication model with one run that
   builds once, pauses for review, and promotes the exact retained bytes.
 - [x] Make protected workflow dispatch the sole supported production entry.
-- [ ] Protect stable tags and restrict bypass to the release automation identity.
+- [x] Protect stable tags and restrict bypass to the release automation identity.
 - [x] Grant `contents: write` only to the protected publisher job.
 - [x] Convert independent release-event publication into explicitly ordered
   reusable jobs under the release orchestrator.
@@ -101,6 +103,10 @@ and sandbox rehearsal satisfy the [release runbook](../release-runbook.md).
 - [x] Make clean standalone `npm ci` part of required CI.
 - [x] Add workflow structure and release-state tests.
 - [ ] Complete an immutable sandbox rehearsal before another production version.
+  The maintainer authorized the narrowly bounded
+  [`v0.0.5` supervised production acceptance](../releases/v0.0.5-preflight.md)
+  without marking this corrective action complete. No later version inherits the
+  exception.
 - [x] Preserve the incident timeline and required operating procedure in the
   owning repository.
 

@@ -75,9 +75,17 @@ async function formulaAt(api, ref) {
 
 function rejectDowngrade(current, release) {
   if (current === null || current === release.formula) return;
-  const versions = [...current.matchAll(/^  version "(\d+\.\d+\.\d+)"$/gm)];
-  requireThat(versions.length === 1, "Cannot determine current formula version; manual review required");
-  const old = versions[0][1].split(".").map(BigInt);
+  // Homebrew rejects an explicit version when it can infer it from the URL.
+  // Require both known architectures to identify one canonical release, with
+  // matching tag/archive versions, before comparing or replacing a formula.
+  const sources = [...current.matchAll(/^    url "https:\/\/github\.com\/harness-lens\/cli\/releases\/download\/v((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))\/harness-lens-v\1-(aarch64|x86_64)-apple-darwin\.tar\.gz"$/gm)];
+  const explicit = [...current.matchAll(/^  version "([^"]+)"$/gm)];
+  requireThat(sources.length === 2 && [...current.matchAll(/^\s+url /gm)].length === 2 &&
+    new Set(sources.map((source) => source[2])).size === 2 && sources[0][1] === sources[1][1] &&
+    explicit.length <= 1 && [...current.matchAll(/^\s+version\b/gm)].length === explicit.length &&
+    explicit.every((match) => match[1] === sources[0][1]),
+  "Cannot determine current formula version; manual review required");
+  const old = sources[0][1].split(".").map(BigInt);
   const next = release.tag.slice(1).split(".").map(BigInt);
   const different = old.findIndex((part, index) => part !== next[index]);
   requireThat(different >= 0 && old[different] < next[different], "Conflicting or newer formula; refusing replacement or downgrade");

@@ -315,20 +315,31 @@ test("npm preflight distinguishes an unused version from conflicts and outages",
   );
 });
 
-test("workflow has one production trigger and one protected contents writer", async () => {
+test("workflow has one production trigger and one protected release App writer", async () => {
   const workflow = await readFile(new URL("../.github/workflows/native-release.yml", import.meta.url), "utf8");
   const npmWorkflow = await readFile(new URL("../.github/workflows/publish.yml", import.meta.url), "utf8");
   assert.match(workflow, /on:\n  workflow_dispatch:/u);
   assert.doesNotMatch(workflow, /\n  push:/u);
   assert.match(npmWorkflow, /on:\n  workflow_call:/u);
   assert.doesNotMatch(npmWorkflow, /\n  release:/u);
-  assert.equal((workflow.match(/^      contents: write$/gm) ?? []).length, 1);
+  assert.equal((workflow.match(/^      contents: write$/gm) ?? []).length, 0);
   const publisher = workflow.split("\n  publish-release:\n")[1].split("\n  publish-npm:\n")[0];
   assert.match(publisher, /environment: release/u);
+  assert.match(publisher, /Mint repository-scoped release token/u);
+  assert.match(publisher, /actions\/create-github-app-token@[a-f0-9]{40}/u);
+  assert.match(publisher, /app-id: \$\{\{ secrets\.HARNESS_LENS_APP_ID \}\}/u);
+  assert.match(publisher, /private-key: \$\{\{ secrets\.HARNESS_LENS_APP_PRIVATE_KEY \}\}/u);
+  assert.match(publisher, /permission-contents: write/u);
+  assert.equal((publisher.match(/GH_TOKEN: \$\{\{ steps\.release-app-token\.outputs\.token \}\}/g) ?? []).length, 2);
+  assert.doesNotMatch(publisher, /GH_TOKEN: \$\{\{ github\.token \}\}/u);
   assert.match(publisher, /release-transaction\.mjs prepare/u);
   assert.match(publisher, /release-transaction\.mjs publish/u);
   assert.equal((publisher.match(/RELEASE_RUN_ATTEMPT: \$\{\{ needs\.assemble-release\.outputs\.candidate_attempt \}\}/g) ?? []).length, 3);
   assert.ok(publisher.indexOf("prepare") < publisher.indexOf("publish"));
   assert.match(workflow, /publish-npm:[\s\S]*needs: \[metadata, assemble-release, publish-release\][\s\S]*uses: \.\/\.github\/workflows\/publish\.yml/u);
   assert.match(workflow, /publish-npm:[\s\S]*if: github\.repository == 'harness-lens\/cli'[\s\S]*uses: \.\/\.github\/workflows\/publish\.yml/u);
+  for (const job of ["publish-homebrew-tap", "homebrew-merge-gate", "publish-ghcr"]) {
+    const section = workflow.split(`\n  ${job}:\n`)[1]?.split(/\n  [a-z][a-z0-9-]+:\n/u)[0] ?? "";
+    assert.match(section, /environment: release/u);
+  }
 });
