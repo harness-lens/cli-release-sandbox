@@ -4,7 +4,7 @@
 [package]
 name = "harness-lens-cli"
 description = "Headless command-line entry point for Harness Lens"
-version = "0.0.5"
+version = "0.0.6"
 edition = "2024"
 rust-version = "1.85"
 authors = ["Cristian Camargo Filho <ccf@cdone.com.br>"]
